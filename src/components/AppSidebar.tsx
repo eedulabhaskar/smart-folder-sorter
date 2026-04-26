@@ -1,6 +1,7 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFiles } from "@/contexts/FileContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   LayoutDashboard,
   Upload,
@@ -12,13 +13,18 @@ import {
   Folders,
   ChevronLeft,
   ChevronRight,
+  Tag,
+  Search,
+  Sun,
+  Moon,
 } from "lucide-react";
-import { useState } from "react";
 import { motion } from "framer-motion";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/upload", label: "Upload Files", icon: Upload },
+  { to: "/upload", label: "Upload", icon: Upload },
+  { to: "/search", label: "AI Search", icon: Search },
+  { to: "/categories", label: "Categories", icon: Tag },
   { to: "/history", label: "History", icon: History },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/profile", label: "Profile", icon: User },
@@ -31,9 +37,16 @@ interface AppSidebarProps {
 }
 
 export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
-  const { user, logout } = useAuth();
+  const { profile, signOut } = useAuth();
   const { files } = useFiles();
+  const { theme, toggle } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <motion.aside
@@ -42,7 +55,6 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
       transition={{ duration: 0.2 }}
       className="h-screen border-r border-border bg-card/30 backdrop-blur-sm flex flex-col flex-shrink-0 overflow-hidden"
     >
-      {/* Logo */}
       <div className="p-3 border-b border-border flex items-center gap-2">
         <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
           <Folders size={18} className="text-primary-foreground" />
@@ -58,7 +70,6 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
         )}
       </div>
 
-      {/* Nav items */}
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
@@ -66,13 +77,12 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
             <NavLink
               key={item.to}
               to={item.to}
+              title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200 group
-                ${
-                  isActive
-                    ? "bg-primary/10 text-primary border border-primary/20 glow-primary"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }
-              `}
+                ${isActive
+                  ? "bg-primary/10 text-primary border border-primary/20 glow-primary"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
             >
               <item.icon size={18} className="flex-shrink-0" />
               {!collapsed && (
@@ -81,35 +91,38 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
                 </span>
               )}
               {!collapsed && item.to === "/upload" && files.length > 0 && (
-                <span className="ml-auto text-xs bg-secondary rounded-full px-2 py-0.5">
-                  {files.length}
-                </span>
+                <span className="ml-auto text-xs bg-secondary rounded-full px-2 py-0.5">{files.length}</span>
               )}
             </NavLink>
           );
         })}
       </nav>
 
-      {/* User & Logout */}
       <div className="p-2 border-t border-border space-y-1">
-        {!collapsed && user && (
+        {!collapsed && profile && (
           <div className="px-3 py-2 rounded-lg bg-secondary/50">
-            <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <p className="text-sm font-medium text-foreground truncate">{profile.name || "User"}</p>
+            <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
           </div>
         )}
         <button
-          onClick={logout}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm w-full
-            text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          onClick={toggle}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm w-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+          title="Toggle theme"
+        >
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          {!collapsed && <span>{theme === "dark" ? "Light" : "Dark"} mode</span>}
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm w-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
         >
           <LogOut size={18} className="flex-shrink-0" />
           {!collapsed && <span>Logout</span>}
         </button>
         <button
           onClick={onToggle}
-          className="flex items-center justify-center rounded-lg px-3 py-2 text-sm w-full
-            text-muted-foreground hover:bg-secondary transition-colors"
+          className="flex items-center justify-center rounded-lg px-3 py-2 text-sm w-full text-muted-foreground hover:bg-secondary transition-colors"
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
