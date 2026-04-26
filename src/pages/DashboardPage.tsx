@@ -1,49 +1,46 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useFiles } from "@/contexts/FileContext";
-import { getActivities } from "@/lib/storage";
 import { formatFileSize } from "@/lib/fileAnalyzer";
 import { StatsBar } from "@/components/StatsBar";
 import { motion } from "framer-motion";
-import { Upload, FileText, FolderOpen, Clock, TrendingUp, Activity } from "lucide-react";
+import { Upload, FileText, FolderOpen, Clock, TrendingUp, Activity, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
 
 const DashboardPage = () => {
-  const { user } = useAuth();
-  const { files, folders } = useFiles();
+  const { profile } = useAuth();
+  const { files, folders, activities, isLoading } = useFiles();
 
-  const activities = useMemo(
-    () => (user ? getActivities(user.id).slice(0, 8) : []),
-    [user, files.length]
-  );
-
-  // Weekly stats (mock based on actual data)
   const todayFiles = files.filter(
-    (f) => new Date(f.uploadedAt).toDateString() === new Date().toDateString()
+    (f) => new Date(f.created_at).toDateString() === new Date().toDateString()
   ).length;
 
-  const topCategory = folders
-    .filter((f) => f.files.length > 0)
-    .sort((a, b) => b.files.length - a.files.length)[0];
+  const topFolder = folders.filter((f) => f.files.length > 0).sort((a, b) => b.files.length - a.files.length)[0];
+  const processingCount = files.filter((f) => f.status === "processing" || f.status === "pending").length;
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
-      {/* Greeting */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-          Welcome back, <span className="text-gradient-primary">{user?.name?.split(" ")[0]}</span>
+          Welcome back,{" "}
+          <span className="text-gradient-primary">{profile?.name?.split(" ")[0] || "friend"}</span>
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Here's your file organization summary
-        </p>
+        <p className="text-muted-foreground text-sm mt-1">Here's your file organization summary</p>
       </motion.div>
 
-      {/* Stats */}
+      {processingCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center gap-2 text-sm text-primary"
+        >
+          <Sparkles size={16} className="animate-pulse" />
+          AI is analyzing {processingCount} file{processingCount > 1 ? "s" : ""}…
+        </motion.div>
+      )}
+
       <StatsBar files={files} folders={folders} />
 
-      {/* Quick actions + summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Quick actions */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -69,11 +66,11 @@ const DashboardPage = () => {
                 {folders.filter((f) => f.files.length > 0).length}
               </span>
             </div>
-            {topCategory && (
+            {topFolder && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Top category</span>
                 <span className="font-display font-bold text-primary">
-                  {topCategory.icon} {topCategory.name}
+                  {topFolder.icon} {topFolder.name}
                 </span>
               </div>
             )}
@@ -93,7 +90,6 @@ const DashboardPage = () => {
           </Link>
         </motion.div>
 
-        {/* Recent activity */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -104,29 +100,24 @@ const DashboardPage = () => {
             <Activity size={16} className="text-primary" /> Recent Activity
           </h2>
 
-          {activities.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">Loading…</div>
+          ) : activities.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock size={28} className="mx-auto mb-2 opacity-40" />
               <p className="text-sm">No activity yet. Upload some files to get started!</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {activities.map((act) => (
-                <div
-                  key={act.id}
-                  className="flex items-center gap-3 rounded-lg bg-secondary/30 px-3 py-2.5"
-                >
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {activities.slice(0, 10).map((act) => (
+                <div key={act.id} className="flex items-center gap-3 rounded-lg bg-secondary/30 px-3 py-2.5">
                   <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <FileText size={14} className="text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">
-                      <span className="font-medium">{act.fileName}</span>
-                      <span className="text-muted-foreground"> → </span>
-                      <span className="text-primary">{act.category}</span>
-                    </p>
+                    <p className="text-sm text-foreground truncate">{act.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(act.timestamp).toLocaleString()}
+                      {new Date(act.created_at).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -136,7 +127,6 @@ const DashboardPage = () => {
         </motion.div>
       </div>
 
-      {/* Folder overview */}
       {folders.filter((f) => f.files.length > 0).length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -150,14 +140,15 @@ const DashboardPage = () => {
             {folders
               .filter((f) => f.files.length > 0)
               .map((folder) => (
-                <div
-                  key={folder.name}
+                <Link
+                  to="/upload"
+                  key={folder.id}
                   className="rounded-lg border border-border bg-card p-3 text-center hover:border-primary/30 transition-colors"
                 >
                   <span className="text-2xl block">{folder.icon}</span>
-                  <p className="text-xs font-medium text-foreground mt-1">{folder.name}</p>
+                  <p className="text-xs font-medium text-foreground mt-1 truncate">{folder.name}</p>
                   <p className="text-xs text-muted-foreground">{folder.files.length} files</p>
-                </div>
+                </Link>
               ))}
           </div>
         </motion.div>
