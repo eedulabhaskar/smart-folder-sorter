@@ -11,6 +11,8 @@ import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import DashboardPage from "@/pages/DashboardPage";
 import UploadPage from "@/pages/UploadPage";
+import SearchPage from "@/pages/SearchPage";
+import CategoriesPage from "@/pages/CategoriesPage";
 import HistoryPage from "@/pages/HistoryPage";
 import ReportsPage from "@/pages/ReportsPage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -43,6 +45,8 @@ const App = () => (
             >
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/upload" element={<UploadPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
