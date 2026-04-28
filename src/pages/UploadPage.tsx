@@ -7,27 +7,31 @@ import { FilePreview } from "@/components/FilePreview";
 import { AIExplanation } from "@/components/AIExplanation";
 import { SearchBar } from "@/components/SearchBar";
 import { motion } from "framer-motion";
-import type { AnalyzedFile, FileCategory } from "@/types/file";
+import type { AnalyzedFile } from "@/types/file";
 
 const UploadPage = () => {
-  const { files, folders, folderMeta, isProcessing, uploadFiles } = useFiles();
-  const [selectedFolder, setSelectedFolder] = useState<FileCategory | null>(null);
+  const { files, folders, categories, isProcessing, uploadFiles } = useFiles();
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<AnalyzedFile | null>(null);
   const [explanationFile, setExplanationFile] = useState<AnalyzedFile | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const selectedCategory = selectedFolder
+    ? categories.find((c) => c.name === selectedFolder)
+    : null;
 
   const filteredFiles = files.filter((f) => {
     const matchesSearch =
       !searchQuery ||
       f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       f.keywords.some((k) => k.includes(searchQuery.toLowerCase())) ||
-      f.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFolder = !selectedFolder || f.category === selectedFolder;
+      f.category_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFolder = !selectedFolder || f.category_name === selectedFolder;
     return matchesSearch && matchesFolder;
   });
 
   const activeFiles = selectedFolder
-    ? filteredFiles.filter((f) => f.category === selectedFolder)
+    ? filteredFiles.filter((f) => f.category_name === selectedFolder)
     : filteredFiles;
 
   const handleFileClick = (file: AnalyzedFile) => {
@@ -65,7 +69,7 @@ const UploadPage = () => {
               ← All Folders
             </button>
             <span className="text-muted-foreground">/</span>
-            <span className="text-2xl">{folderMeta[selectedFolder]?.icon}</span>
+            <span className="text-2xl">{selectedCategory?.icon ?? "📁"}</span>
             <h2 className="text-xl font-display font-semibold text-foreground">
               {selectedFolder}
             </h2>
