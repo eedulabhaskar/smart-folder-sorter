@@ -69,7 +69,7 @@ const UploadPage = () => {
               ← All Folders
             </button>
             <span className="text-muted-foreground">/</span>
-            <span className="text-2xl">{folderMeta[selectedFolder]?.icon}</span>
+            <span className="text-2xl">{selectedCategory?.icon ?? "📁"}</span>
             <h2 className="text-xl font-display font-semibold text-foreground">
               {selectedFolder}
             </h2>
